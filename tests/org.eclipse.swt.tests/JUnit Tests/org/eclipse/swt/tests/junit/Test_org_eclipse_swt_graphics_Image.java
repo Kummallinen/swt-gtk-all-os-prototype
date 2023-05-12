@@ -807,10 +807,84 @@ public void test_getImageDataCurrentZoom() {
 }
 
 @Test
-public void test_getImageData() {
-	getImageData1();
-	getImageData2(24, new PaletteData(0xff0000, 0xff00, 0xff));
-	getImageData2(32, new PaletteData(0xff0000, 0xff00, 0xff));
+public void test_getImageData_fromImage() {
+	int width = 10;
+	int height = 10;
+	Color color = new Color(0, 0xff, 0);
+	Image image = new Image(display, width, height);
+	fillImage(image, color);
+	ImageData imageData = image.getImageData();
+	assertAllPixelsHaveColor(imageData, color);
+	image.dispose();
+}
+
+/*
+ * Verify Image.getImageData returns pixels with the same RGB value as the
+ * source image. This test only makes sense with depth of 24 and 32 bits.
+ */
+@Test
+public void test_getImageData_fromImageForCustomImageData() {
+	int width = 10;
+	int height = 10;
+	Color color = new Color(0, 0xff, 0);
+	PaletteData palette = new PaletteData(0xff0000, 0xff00, 0xff);
+	int[] depths = new int[] { 24, 32 };
+	for (int depth : depths) {
+		ImageData imageData = new ImageData(width, height, depth, palette);
+		Image image = new Image(display, imageData);
+		fillImage(image, color);
+		ImageData newData = image.getImageData();
+		assertAllPixelsHaveColor(newData, color);
+		image.dispose();
+	}
+}
+
+// On Windows, the first used Image constructor creates a DDB, while the second
+// transforms it into a DIB, still pixel RGB and alpha values should be the same.
+@Test
+public void test_getImageData_fromImageForImageDataFromImage() {
+	int width = 10;
+	int height = 10;
+	Color color = new Color(0, 0xff, 0);
+	Image image = new Image(display, width, height);
+	fillImage(image, color);
+	ImageData imageData = image.getImageData();
+	ImageData recreatedImageData = new Image(display, imageData).getImageData();
+	assertImageDataEqualsIgnoringAlphaInData(imageData, recreatedImageData);
+	image.dispose();
+}
+
+// On Windows, the first used Image constructor creates a DDB, while the second
+// transforms it into a DIB, still pixel RGB and alpha values should be the same.
+@Test
+public void test_getImageData_fromCopiedImage() {
+	int width = 10;
+	int height = 10;
+	Color color = new Color(0, 0xff, 0);
+	Image image = new Image(display, width, height);
+	fillImage(image, color);
+	ImageData imageData = image.getImageData();
+	ImageData copiedImageData = new Image(display, image, SWT.IMAGE_COPY).getImageData();
+	assertImageDataEqualsIgnoringAlphaInData(imageData, copiedImageData);
+	image.dispose();
+}
+
+@Test
+public void test_getImageData_fromFiles() {
+	int numFormats = SwtTestUtil.imageFormats.length;
+	String fileName = SwtTestUtil.imageFilenames[0];
+	for (int i=0; i<numFormats; i++) {
+		String format = SwtTestUtil.imageFormats[i];
+		try (InputStream stream = SwtTestUtil.class.getResourceAsStream(fileName + "." + format)) {
+			ImageData data1 = new ImageData(stream);
+			Image image = new Image(display, data1);
+			ImageData data2 = image.getImageData();
+			image.dispose();
+			assertImageDataEqualsIgnoringAlphaInData(data1, data2);
+		} catch (IOException e) {
+			// continue;
+		}
+	}
 }
 
 @Test
@@ -1045,56 +1119,6 @@ public void test_toString() {
 /* custom */
 Display display;
 
-/** Test implementation **/
-
-void getImageData1() {
-	int numFormats = SwtTestUtil.imageFormats.length;
-	String fileName = SwtTestUtil.imageFilenames[0];
-	for (int i=0; i<numFormats; i++) {
-		String format = SwtTestUtil.imageFormats[i];
-		try (InputStream stream = SwtTestUtil.class.getResourceAsStream(fileName + "." + format)) {
-			ImageData data1 = new ImageData(stream);
-			Image image = new Image(display, data1);
-			ImageData data2 = image.getImageData();
-			image.dispose();
-			assertEquals("Image width should be the same", data1.width, data2.width);
-			assertEquals("Image height should be the same", data1.height, data2.height);
-		} catch (IOException e) {
-			// continue;
-		}
-	}
-}
-
-/*
- * Verify Image.getImageData returns pixels with the same RGB value as the
- * source image. This test only makes sense with depth of 24 and 32 bits.
- */
-void getImageData2(int depth, PaletteData palette) {
-	int width = 10;
-	int height = 10;
-	Color color = new Color(0, 0xff, 0);
-	RGB colorRGB = color.getRGB();
-
-	ImageData imageData = new ImageData(width, height, depth, palette);
-	Image image = new Image(display, imageData);
-
-	GC gc = new GC(image);
-	gc.setBackground(color);
-	gc.setForeground(color);
-	gc.fillRectangle(0, 0, 10, 10);
-
-	ImageData newData = image.getImageData();
-	PaletteData newPalette = newData.palette;
-	for (int i = 0; i < width; i++) {
-		for (int j = 0; j < height; j++) {
-			int pixel = newData.getPixel(i, j);
-			RGB rgb = newPalette.getRGB(pixel);
-			assertTrue("rgb.equals(colorRGB)", rgb.equals(colorRGB));
-		}
-	}
-	gc.dispose();
-	image.dispose();
-}
 String getPath(String fileName) {
 	String urlPath;
 
@@ -1131,6 +1155,55 @@ RGB getRealRGB(Color color) {
 	colorImage.dispose();
 	pixel = imageData.getPixel(0, 0);
 	return palette.getRGB(pixel);
+}
+
+private static void fillImage(Image image, Color fillColor) {
+	GC gc = new GC(image);
+	gc.setBackground(fillColor);
+	gc.setForeground(fillColor);
+	gc.fillRectangle(image.getBounds());
+	gc.dispose();
+}
+
+private static PaletteData assertAllPixelsHaveColor(ImageData imageData, Color expectedColor) {
+	PaletteData newPalette = imageData.palette;
+	for (int x = 0; x < imageData.width; x++) {
+		for (int y = 0; y < imageData.height; y++) {
+			int pixel = imageData.getPixel(x, y);
+			RGB rgb = newPalette.getRGB(pixel);
+			assertEquals("pixel at x=" + x + " y=" + y + " does not have expected color", expectedColor.getRGB(), rgb);
+		}
+	}
+	return newPalette;
+}
+
+// ImageData has no custom equals method and the default one isn't sufficient
+public static void assertImageDataEqualsIgnoringAlphaInData(final ImageData expected, final ImageData actual) {
+	assertNotNull("expected data must not be null", expected);
+	assertNotNull("actual data must not be null", actual);
+	if (expected == actual) {
+		return;
+	}
+	assertEquals("height of expected image is different from actual image", expected.height, actual.height);
+	// Alpha values are taken from alpha data, so ignore whether data depth is 24 or 32 bits
+	int expectedNormalizedDepth = expected.depth == 32 ? 24 : expected.depth;
+	int actualNormalizedDepth = expected.depth == 32 ? 24 : expected.depth;
+	assertEquals("depth of image data to compare must be equal", expectedNormalizedDepth, actualNormalizedDepth);
+	assertEquals("width of expected image is different from actual image", expected.width, actual.width);
+	assertEquals("transparency type of expected image is different from actual image", expected.getTransparencyType(), actual.getTransparencyType());
+
+	for (int y = 0; y < expected.height; y++) {
+		for (int x = 0; x < expected.width; x++) {
+			// FIXME win32: dragged ALPHA=FF, dropped ALPHA=00, but other transparencyType
+			// => alpha stored in ImageData.alphaData
+			String expectedPixel = String.format("0x%08X", expected.getPixel(x, y) >> (expected.depth == 32 ? 8 : 0));
+			String actualPixel = String.format("0x%08X", actual.getPixel(x, y) >> (actual.depth == 32 ? 8 : 0));
+			assertEquals("actual pixel at x=" + x + " y=" + y + " is different from expected pixel", expectedPixel, actualPixel);
+			int expectedAlpha = expected.getAlpha(x, y);
+			int actualAlpha = actual.getAlpha(x, y);
+			assertEquals("actual pixel alpha at x=" + x + " y=" + y + " is different from expected pixel", expectedAlpha, actualAlpha);
+		}
+	}
 }
 
 /**
