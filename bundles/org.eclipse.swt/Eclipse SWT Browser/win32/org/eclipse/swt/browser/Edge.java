@@ -58,6 +58,8 @@ class Edge extends WebBrowser {
 	boolean inNewWindow;
 	HashMap<Long, LocationEvent> navigations = new HashMap<>();
 
+	private static volatile boolean isDisposingBrowser = false;
+
 	static {
 		NativeClearSessions = () -> {
 			ICoreWebView2CookieManager manager = getCookieManager();
@@ -353,6 +355,7 @@ ICoreWebView2Environment createEnvironment() {
 public void create(Composite parent, int style) {
 	checkDeadlock();
 	ICoreWebView2Environment environment = createEnvironment();
+	waitForConcurrentBrowserDisposal();
 
 	long[] ppv = new long[1];
 	int hr = environment.QueryInterface(COM.IID_ICoreWebView2Environment2, ppv);
@@ -417,7 +420,21 @@ public void create(Composite parent, int style) {
 	Instances.add(this);
 }
 
+/**
+ * In case a browser is currently being disposed, wait for the according events
+ * to be processed in order to avoid conflicts due to processing disposal and
+ * creation events at the same time.
+ */
+private void waitForConcurrentBrowserDisposal() {
+	System.out.println("Concurrent browser disposal");
+	while (isDisposingBrowser && !Display.getCurrent().readAndDispatch()) {
+		Display.getCurrent().sleep();
+	}
+}
+
 void browserDispose(Event event) {
+	waitForConcurrentBrowserDisposal();
+	isDisposingBrowser  = true;
 	Instances.remove(this);
 
 	if (webView_2 != null) webView_2.Release();
@@ -437,10 +454,12 @@ void browserDispose(Event event) {
 		browser.getDisplay().asyncExec(() -> {
 			controller1.Close();
 			controller1.Release();
+			isDisposingBrowser = false;
 		});
 	} else {
 		controller.Close();
 		controller.Release();
+		isDisposingBrowser = false;
 	}
 	controller = null;
 }
