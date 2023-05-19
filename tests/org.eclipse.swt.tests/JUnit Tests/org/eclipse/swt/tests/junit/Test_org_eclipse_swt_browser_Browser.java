@@ -186,6 +186,10 @@ public void setUp() {
 	setWidget(browser); // For browser to occupy the whole shell, not just half of it.
 
 	testLog = new StringBuilder("\nTest log:\n");
+	if (isEdge) {
+		// process pending events to properly cleanup Edge browser resources
+		processUiEvents();
+	}
 	if (SwtTestUtil.isGTK) {
 		// process pending events to properly cleanup GTK browser resources
 		processUiEvents();
@@ -229,6 +233,18 @@ public void tearDown() {
 			printThreadsInfo();
 		}
 	}
+//	if (isEdge) {
+//		// process pending events to properly cleanup Edge browser resources
+//		processUiEvents();
+//	}
+//	System.out.println("waiting after test");
+//	try {
+//		Thread.sleep(300);
+//	} catch (InterruptedException e) {
+//		// TODO Auto-generated catch block
+//		e.printStackTrace();
+//	}
+//	System.out.println("waited after test");
 	if (SwtTestUtil.isGTK) {
 		int descriptorDiff = reportOpenedDescriptors();
 		if(descriptorDiff > 0) {

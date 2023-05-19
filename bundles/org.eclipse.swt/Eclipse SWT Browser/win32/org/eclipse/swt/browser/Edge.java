@@ -231,12 +231,17 @@ private static int callAndWait(long[] ppv, ToIntFunction<IUnknown> callable, boo
 	ppv[0] = 0;
 	phr[0] = callable.applyAsInt(completion);
 	completion.Release();
+	long startTime = System.currentTimeMillis();
 	while (phr[0] == COM.S_OK && ppv[0] == 0) {
 		if (processAsyncEvents) {
 			processNextMessage();
 		} else {
 			processNextOSMessage();
 		}
+	}
+	long duration = System.currentTimeMillis() - startTime;
+	if (duration > 10_000) {
+		System.out.println("Waiting for message took look: " + duration);
 	}
 	return phr[0];
 }
@@ -274,12 +279,12 @@ static int callAndWait(String[] pstr, ToIntFunction<IUnknown> callable) {
 private static void processNextOSMessage() {
 	Display display = Display.getCurrent();
 	MSG msg = new MSG();
-	if (!OS.PeekMessage (msg, 0, 0, 0, OS.PM_NOREMOVE)) {
-		System.out.println("wait for message: " + System.currentTimeMillis());
-		display.sleep();
-		System.out.println("message received: " + System.currentTimeMillis());
-	};
-	display.readAndDispatch();
+	if (OS.PeekMessage (msg, 0, 0, 0, OS.PM_NOREMOVE)) {
+		System.out.println("Processed handle: " + msg.hwnd);
+		display.readAndDispatch();
+	} else {
+		Thread.yield();
+	}
 }
 
 /**
@@ -383,6 +388,7 @@ public void create(Composite parent, int style) {
 	int hr = environment.QueryInterface(COM.IID_ICoreWebView2Environment2, ppv);
 	if (hr == COM.S_OK) environment2 = new ICoreWebView2Environment2(ppv[0]);
 
+	System.out.println("Creating browser with handle: " + browser.handle + " in composite with handle : " + parent.handle);
 	hr = callAndWaitWithoutProcessingAsyncEvents(ppv, completion -> environment.CreateCoreWebView2Controller(browser.handle, completion));
 	if (hr != COM.S_OK) error(SWT.ERROR_NO_HANDLES, hr);
 	controller = new ICoreWebView2Controller(ppv[0]);
@@ -443,6 +449,7 @@ public void create(Composite parent, int style) {
 }
 
 void browserDispose(Event event) {
+//	boolean wasEnabled = browser.isVisible();
 	Instances.remove(this);
 
 	if (webView_2 != null) webView_2.Release();
@@ -466,6 +473,17 @@ void browserDispose(Event event) {
 	} else {
 		controller.Close();
 		controller.Release();
+//		MSG msg = new MSG();
+//		while (wasEnabled) {
+//			OS.PeekMessage (msg, 0, 0, 0, OS.PM_NOREMOVE);
+//			while (!Display.getCurrent().readAndDispatch()) {
+//				Display.getCurrent().sleep();
+//			}
+//
+//			if (msg.hwnd == this.browser.handle) {
+//				break;
+//			}
+//		}
 	}
 	controller = null;
 }
