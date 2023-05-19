@@ -220,6 +220,7 @@ static int callAndWaitWithoutProcessingAsyncEvents(long[] ppv, ToIntFunction<IUn
 private static int callAndWait(long[] ppv, ToIntFunction<IUnknown> callable, boolean processAsyncEvents) {
 	int[] phr = {COM.S_OK};
 	IUnknown completion = newCallback((result, pv) -> {
+		System.out.println("initialized: " + System.currentTimeMillis());
 		phr[0] = (int)result;
 		if ((int)result == COM.S_OK) {
 			ppv[0] = pv;
@@ -273,11 +274,12 @@ static int callAndWait(String[] pstr, ToIntFunction<IUnknown> callable) {
 private static void processNextOSMessage() {
 	Display display = Display.getCurrent();
 	MSG msg = new MSG();
-	if (OS.PeekMessage (msg, 0, 0, 0, OS.PM_NOREMOVE)) {
-		display.readAndDispatch();
-	} else {
-		Thread.yield();
-	}
+	if (!OS.PeekMessage (msg, 0, 0, 0, OS.PM_NOREMOVE)) {
+		System.out.println("wait for message: " + System.currentTimeMillis());
+		display.sleep();
+		System.out.println("message received: " + System.currentTimeMillis());
+	};
+	display.readAndDispatch();
 }
 
 /**
