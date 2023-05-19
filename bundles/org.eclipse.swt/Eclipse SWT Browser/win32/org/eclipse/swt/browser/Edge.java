@@ -210,7 +210,14 @@ IUnknown newHostObject(ICoreWebView2SwtHost handler) {
 }
 
 static int callAndWait(long[] ppv, ToIntFunction<IUnknown> callable) {
-	while (Display.getCurrent().readAndDispatch()) {}
+	return callAndWait(ppv, callable, true);
+}
+
+static int callAndWaitWithoutProcessingAsyncEvents(long[] ppv, ToIntFunction<IUnknown> callable) {
+	return callAndWait(ppv, callable, false);
+}
+
+private static int callAndWait(long[] ppv, ToIntFunction<IUnknown> callable, boolean processAsyncEvents) {
 	int[] phr = {COM.S_OK};
 	IUnknown completion = newCallback((result, pv) -> {
 		phr[0] = (int)result;
@@ -224,7 +231,11 @@ static int callAndWait(long[] ppv, ToIntFunction<IUnknown> callable) {
 	phr[0] = callable.applyAsInt(completion);
 	completion.Release();
 	while (phr[0] == COM.S_OK && ppv[0] == 0) {
-		processNextOSMessage();
+		if (processAsyncEvents) {
+			processNextMessage();
+		} else {
+			processNextOSMessage();
+		}
 	}
 	return phr[0];
 }
@@ -242,7 +253,7 @@ static int callAndWait(String[] pstr, ToIntFunction<IUnknown> callable) {
 	phr[0] = callable.applyAsInt(completion);
 	completion.Release();
 	while (phr[0] == COM.S_OK && pstr[0] == null) {
-		processNextOSMessage();
+		processNextMessage();
 	}
 	return phr[0];
 }
@@ -252,7 +263,7 @@ static int callAndWait(String[] pstr, ToIntFunction<IUnknown> callable) {
  * is required for processing the OS events during browser initialization, since
  * Edge browser initialization happens asynchronously.
  * <p>
- * {@link Display#readAndDisplay()} also processes events scheduled for
+ * {@link Display#readAndDispatch()} also processes events scheduled for
  * asynchronous execution via {@link Display#asyncExec(Runnable)}. This may
  * include events such as the disposal of the browser's parent composite, which
  * leads to a failure in browser initialization if processed in between the OS
@@ -267,6 +278,16 @@ private static void processNextOSMessage() {
 	} else {
 		Thread.yield();
 	}
+}
+
+/**
+ * Performs a {@link Display#readAndDispatch()} to process the next event, no
+ * matter whether it is an OS message to be processed or an asynchronous
+ * execution scheduled via {@link Display#asyncExec(Runnable)}.
+ */
+private static void processNextMessage() {
+	Display display = Display.getCurrent();
+	if (!display.readAndDispatch()) display.sleep();
 }
 
 static ICoreWebView2CookieManager getCookieManager() {
@@ -360,7 +381,7 @@ public void create(Composite parent, int style) {
 	int hr = environment.QueryInterface(COM.IID_ICoreWebView2Environment2, ppv);
 	if (hr == COM.S_OK) environment2 = new ICoreWebView2Environment2(ppv[0]);
 
-	hr = callAndWait(ppv, completion -> environment.CreateCoreWebView2Controller(browser.handle, completion));
+	hr = callAndWaitWithoutProcessingAsyncEvents(ppv, completion -> environment.CreateCoreWebView2Controller(browser.handle, completion));
 	if (hr != COM.S_OK) error(SWT.ERROR_NO_HANDLES, hr);
 	controller = new ICoreWebView2Controller(ppv[0]);
 
@@ -554,6 +575,8 @@ int handleDocumentTitleChanged(long pView, long pArgs) {
 }
 
 long handleCallJava(int index, long bstrToken, long bstrArgsJson) {
+	checkDeadlock();
+
 	Object result = null;
 	String token = bstrToString(bstrToken);
 	BrowserFunction function = functions.get(index);
