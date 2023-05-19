@@ -3646,6 +3646,13 @@ void postEvent (Event event) {
  * @see #wake
  */
 public boolean readAndDispatch () {
+	return readAndDispatch(false);
+}
+
+/**
+ * @since 3.124
+ */
+public boolean readAndDispatch (boolean printMessage) {
 	checkDevice ();
 	lpStartupInfo = null;
 	drawMenuBars ();
@@ -3653,6 +3660,7 @@ public boolean readAndDispatch () {
 	runDeferredLayouts ();
 	runPopups ();
 	if (OS.PeekMessage (msg, 0, 0, 0, OS.PM_REMOVE)) {
+		System.out.println("Message: " + msg.message + ", lparam: "  + msg.lParam + ", wparam: " + msg.wParam);
 		if (!filterMessage (msg)) {
 			OS.TranslateMessage (msg);
 			OS.DispatchMessage (msg);

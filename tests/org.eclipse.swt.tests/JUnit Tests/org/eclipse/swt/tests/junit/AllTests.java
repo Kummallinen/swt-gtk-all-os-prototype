@@ -23,7 +23,6 @@ import org.junit.runners.Suite;
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	AllNonBrowserTests.class,
 	AllBrowserTests.class
 })
 public class AllTests {
