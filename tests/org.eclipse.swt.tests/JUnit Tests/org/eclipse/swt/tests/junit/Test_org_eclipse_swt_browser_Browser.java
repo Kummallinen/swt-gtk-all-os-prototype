@@ -226,6 +226,14 @@ public void tearDown() {
 	}
 	assertEquals("Found " + disposedBrowsers + " not disposed browsers!", 0, disposedBrowsers);
 	boolean verbose = false;
+	if (isEdge) {
+		try {
+			Thread.sleep(200);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	if(verbose) {
 		if(testNumber % 2 == 0) {
 			printMemoryUse();
