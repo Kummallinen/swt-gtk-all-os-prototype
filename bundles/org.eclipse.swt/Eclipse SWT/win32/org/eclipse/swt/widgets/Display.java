@@ -3660,7 +3660,7 @@ public boolean readAndDispatch (boolean printMessage) {
 	runDeferredLayouts ();
 	runPopups ();
 	if (OS.PeekMessage (msg, 0, 0, 0, OS.PM_REMOVE)) {
-		//System.out.println("Message: " + msg.message + ", lparam: "  + msg.lParam + ", wparam: " + msg.wParam);
+		System.out.println("Message: " + msg.message + ", hwnd: "  + msg.hwnd);
 		if (!filterMessage (msg)) {
 			OS.TranslateMessage (msg);
 			OS.DispatchMessage (msg);

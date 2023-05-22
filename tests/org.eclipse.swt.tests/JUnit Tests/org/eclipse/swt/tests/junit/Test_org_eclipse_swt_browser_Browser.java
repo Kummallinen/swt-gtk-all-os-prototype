@@ -186,10 +186,6 @@ public void setUp() {
 	setWidget(browser); // For browser to occupy the whole shell, not just half of it.
 
 	testLog = new StringBuilder("\nTest log:\n");
-	if (isEdge) {
-		// process pending events to properly cleanup Edge browser resources
-		processUiEvents();
-	}
 	if (SwtTestUtil.isGTK) {
 		// process pending events to properly cleanup GTK browser resources
 		processUiEvents();
@@ -226,14 +222,6 @@ public void tearDown() {
 	}
 	assertEquals("Found " + disposedBrowsers + " not disposed browsers!", 0, disposedBrowsers);
 	boolean verbose = false;
-	if (isEdge) {
-		try {
-			Thread.sleep(200);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
 	if(verbose) {
 		if(testNumber % 2 == 0) {
 			printMemoryUse();
@@ -241,18 +229,15 @@ public void tearDown() {
 			printThreadsInfo();
 		}
 	}
-//	if (isEdge) {
-//		// process pending events to properly cleanup Edge browser resources
-//		processUiEvents();
-//	}
-//	System.out.println("waiting after test");
-//	try {
-//		Thread.sleep(300);
-//	} catch (InterruptedException e) {
-//		// TODO Auto-generated catch block
-//		e.printStackTrace();
-//	}
-//	System.out.println("waited after test");
+	if (isEdge) {
+		// wait for and process pending events to properly cleanup Edge browser resources
+		do {
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+			}
+		} while (Display.getCurrent().readAndDispatch());
+	}
 	if (SwtTestUtil.isGTK) {
 		int descriptorDiff = reportOpenedDescriptors();
 		if(descriptorDiff > 0) {
@@ -296,8 +281,12 @@ private int reportOpenedDescriptors() {
 }
 
 private Browser createBrowser(Shell s, int flags) {
+	long maximumBrowserCreationMilliseconds = 10_000;
+	long createStartTime = System.currentTimeMillis();
 	Browser b = new Browser(s, flags);
 	createdBroswers.add(b);
+	long createDuration = System.currentTimeMillis() - createStartTime;
+	assertTrue("creating browser took too long: " + createDuration + "ms", createDuration < maximumBrowserCreationMilliseconds);
 	return b;
 }
 
@@ -1370,7 +1359,7 @@ public void test_setJavascriptEnabled_multipleInstances() {
 	AtomicBoolean instanceTwoFinishedCorrectly = new AtomicBoolean(false);
 
 
-	Browser browserSecondInsance = createBrowser(shell,swtBrowserSettings);
+	Browser browserSecondInsance = createBrowser(shell, swtBrowserSettings);
 
 	browser.addProgressListener(completedAdapter(event -> {
 		if (pageLoadCount.get() == 1) {
@@ -2430,7 +2419,7 @@ public void test_BrowserFunction_callback_afterPageReload() {
 	browser.setText("1st (initial) page load");
 	new JavascriptCallback(browser, "jsCallbackToJava");
 	browser.execute("jsCallbackToJava()");
-	// see if function still works after a page change:
+//	 see if function still works after a page change:
 	browser.addProgressListener(completedAdapter(e -> browser.execute("jsCallbackToJava()")));
 
 	shell.open();
