@@ -13,6 +13,8 @@
  */
 package org.eclipse.swt.custom;
 
+import static org.eclipse.swt.widgets.ControlUtil.executeWithRedrawDisabled;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.widgets.*;
@@ -156,19 +158,19 @@ class MouseNavigator {
 			return;
 		}
 
-		parent.setRedraw(false);
-		if (hasHBar) {
-			final ScrollBar bar = parent.getHorizontalBar();
-			bar.setSelection((int) (bar.getSelection() - deltaX * .1));
-			fireSelectionEvent(e, bar);
-		}
+		executeWithRedrawDisabled(parent, () -> {
+			if (hasHBar) {
+				final ScrollBar bar = parent.getHorizontalBar();
+				bar.setSelection((int) (bar.getSelection() - deltaX * .1));
+				fireSelectionEvent(e, bar);
+			}
 
-		if (hasVBar) {
-			final ScrollBar bar = parent.getVerticalBar();
-			bar.setSelection((int) (bar.getSelection() - deltaY * .1));
-			fireSelectionEvent(e, bar);
-		}
-		parent.setRedraw(true);
+			if (hasVBar) {
+				final ScrollBar bar = parent.getVerticalBar();
+				bar.setSelection((int) (bar.getSelection() - deltaY * .1));
+				fireSelectionEvent(e, bar);
+			}
+		});
 		parent.redraw();
 	}
 

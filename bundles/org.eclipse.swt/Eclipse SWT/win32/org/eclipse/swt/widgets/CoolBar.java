@@ -14,6 +14,8 @@
 package org.eclipse.swt.widgets;
 
 
+import static org.eclipse.swt.widgets.ControlUtil.executeWithRedrawDisabled;
+
 import org.eclipse.swt.*;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.internal.*;
@@ -814,11 +816,11 @@ public void setItemLayout (int [] itemOrder, int [] wrapIndices, Point [] sizes)
 }
 
 void setItemLayoutInPixels (int [] itemOrder, int [] wrapIndices, Point [] sizes) {
-	setRedraw (false);
-	setItemOrder (itemOrder);
-	setWrapIndices (wrapIndices);
-	setItemSizes (sizes);
-	setRedraw (true);
+	executeWithRedrawDisabled(this, ()-> {
+		setItemOrder (itemOrder);
+		setWrapIndices (wrapIndices);
+		setItemSizes (sizes);
+	});
 }
 
 /*
@@ -957,31 +959,31 @@ public void setLocked (boolean locked) {
  */
 public void setWrapIndices (int [] indices) {
 	checkWidget ();
-	if (indices == null) indices = new int [0];
+	int[] nonNullIndices = indices != null ? indices : new int [0];
 	int count = getItemCount ();
 	for (int index : indices) {
 		if (index < 0 || index >= count) {
 			error (SWT.ERROR_INVALID_RANGE);
 		}
 	}
-	setRedraw (false);
-	CoolItem [] items = getItems ();
-	for (int i=0; i<items.length; i++) {
-		CoolItem item = items [i];
-		if (item.getWrap ()) {
-			resizeToPreferredWidth (i - 1);
-			item.setWrap (false);
+	executeWithRedrawDisabled(this, () -> {
+		CoolItem [] items = getItems ();
+		for (int i=0; i<items.length; i++) {
+			CoolItem item = items [i];
+			if (item.getWrap ()) {
+				resizeToPreferredWidth (i - 1);
+				item.setWrap (false);
+			}
 		}
-	}
-	resizeToMaximumWidth (count - 1);
-	for (int index : indices) {
-		if (0 <= index && index < items.length) {
-			CoolItem item = items [index];
-			item.setWrap (true);
-			resizeToMaximumWidth (index - 1);
+		resizeToMaximumWidth (count - 1);
+		for (int index : nonNullIndices) {
+			if (0 <= index && index < items.length) {
+				CoolItem item = items [index];
+				item.setWrap (true);
+				resizeToMaximumWidth (index - 1);
+			}
 		}
-	}
-	setRedraw (true);
+	});
 }
 
 @Override
