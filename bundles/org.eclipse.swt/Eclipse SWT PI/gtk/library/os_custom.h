@@ -58,7 +58,9 @@
 
 #define ubuntu_menu_proxy_get_LIB LIB_GTK
 #define FcConfigAppFontAddFile_LIB LIB_FONTCONFIG
+#ifndef _WIN32
 #define pango_attr_insert_hyphens_new_LIB LIB_PANGO
+#endif
 
 /* Field accessors */
 #define G_OBJECT_CLASS_CONSTRUCTOR(arg0) (arg0)->constructor

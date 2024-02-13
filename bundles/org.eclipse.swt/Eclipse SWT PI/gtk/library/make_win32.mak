@@ -16,7 +16,7 @@
 # Makefile for creating SWT libraries for win32 GTK
 
 # rewrite backslashes to slashes in paths
-JAVA_HOME := $(subst \,/,$(JAVA_HOME))
+SWT_JAVA_HOME := $(subst \,/,$(SWT_JAVA_HOME))
 OUTPUT_DIR := $(subst \,/,$(OUTPUT_DIR))
 
 #SWT_LIB_DEBUG=1     # to debug glue code in /bundles/org.eclipse.swt/bin/library. E.g os_custom.c:swt_fixed_forall(..)
@@ -88,11 +88,10 @@ ATK_OBJECTS = swt.o atk.o atk_structs.o atk_custom.o atk_stats.o
 
 CFLAGS = -O -Wall \
 		-DSWT_VERSION=$(SWT_VERSION) \
-		$(NATIVE_STATS) \
 		$(SWT_DEBUG) \
 		-DWIN32 -DGTK \
-		-I$(JAVA_HOME)/include \
-		-I$(JAVA_HOME)/include/win32 \
+		-I$(SWT_JAVA_HOME)/include \
+		-I$(SWT_JAVA_HOME)/include/win32 \
 		-fPIC \
 		${SWT_PTR_CFLAGS}
 LFLAGS = -shared -fPIC ${SWT_LFLAGS}
