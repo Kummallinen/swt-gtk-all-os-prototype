@@ -131,7 +131,7 @@
 												</exec>
 												<property name="SWT_JAVA_HOME" value="${java.home}"/><!-- Not overwritten if already set, e.g. as CLI argument -->
 												<echo>Compile SWT natives against headers and libraries from JDK: ${SWT_JAVA_HOME}</echo>
-												<if><equals arg1="${ws}" arg2="win32" />
+												<if><equals arg1="${os}" arg2="win32" />
 													<then>
 														<exec dir="${build_dir}" executable="${build_dir}/build.bat" failonerror="true">
 															<env key="SWT_JAVA_HOME" value="${SWT_JAVA_HOME}"/>
