@@ -2153,7 +2153,7 @@ public long internal_new_GC (GCData data) {
 		}
 		data.device = device;
 		data.image = this;
-		data.font = Font.win32_new(device.getSystemFont(), DPIUtil.getNativeDeviceZoom());
+		data.font = SWTFontProvider.getSystemFont(device, DPIUtil.getNativeDeviceZoom());
 	}
 	return imageDC;
 }
