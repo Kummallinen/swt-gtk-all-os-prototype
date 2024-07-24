@@ -918,6 +918,10 @@ Accessible _getAccessible () {
 	return accessible;
 }
 
+Accessible _getAccessibleNoInit () {
+	return accessible;
+}
+
 /**
  * Returns a rectangle describing the receiver's size and location in points
  * relative to its parent (or its display if its parent is null),
@@ -2471,7 +2475,13 @@ public void removePaintListener(PaintListener listener) {
 void removeRelation () {
 	if (!isDescribedByLabel ()) return;		/* there will not be any */
 	if (labelRelation != null) {
-		_getAccessible().removeRelation (ACC.RELATION_LABELLED_BY, labelRelation._getAccessible());
+		Accessible selfAccessible = _getAccessibleNoInit();
+		Accessible relationAccessible = labelRelation._getAccessibleNoInit();
+		if(selfAccessible != null && relationAccessible != null) { // Should not be needed, but somehow is
+			_getAccessible().removeRelation (ACC.RELATION_LABELLED_BY, labelRelation._getAccessible());
+		} else if (relationAccessible != null) {
+			System.err.println("SWT ERROR: Call to removeRelation with null self Accessible but set relation Accessible");
+		}
 		labelRelation = null;
 	}
 }
