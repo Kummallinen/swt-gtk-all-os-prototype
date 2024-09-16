@@ -48,7 +48,7 @@ class AccessibleObject {
 
 		if (GTK.GTK4) {
 			//TODO: Make use of Accessibility interface of GtkWidget rather than atk object which has been removed
-		} else {
+		} else if(false){
 			if (type == OS.swt_fixed_get_type()) {
 				if (widget != 0 && !isLightweight) {
 					atkHandle = GTK3.gtk_widget_get_accessible(widget);
