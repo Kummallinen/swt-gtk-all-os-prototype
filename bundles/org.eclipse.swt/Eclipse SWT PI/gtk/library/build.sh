@@ -85,6 +85,10 @@ case $OS in
 		SWT_OS=win32
 		MAKEFILE=make_win32.mak
 		;;
+	"Darwin")
+		SWT_OS=darwin
+		MAKEFILE=make_darwin.mak
+		;;
 	*)
 		SWT_OS=`uname -s | tr -s '[:upper:]' '[:lower:]'`
 		MAKEFILE=make_linux.mak
@@ -146,6 +150,14 @@ case $SWT_OS.$SWT_ARCH in
 			export PKG_CONFIG_PATH="/usr/lib64/pkgconfig/"
 		fi
 		;;
+	"darwin.aarch64")
+		if [ "${CC}" = "" ]; then
+			export CC=gcc
+		fi
+		if [ "${PKG_CONFIG_PATH}" = "" ]; then
+			export PKG_CONFIG_PATH="/usr/lib64/pkgconfig/"
+		fi
+		;;
 esac
 
 
@@ -165,9 +177,6 @@ if [ ${MODEL} = 'x86_64' -o ${MODEL} = 'ppc64le' -o ${MODEL} = 'aarch64' -o ${MO
 	export SWT_PTR_CFLAGS
 fi
 
-# Set PKG_CONFIG_PATH
-export PKG_CONFIG_PATH="/mingw64/lib/pkgconfig:/usr/lib/pkgconfig:/usr/share/pkgconfig:/lib/pkgconfig"
-
 if [ x`pkg-config --exists cairo && echo YES` = "xYES" ]; then
 	func_echo_plus "Cairo found, compiling SWT support for the cairo graphics library."
 	MAKE_CAIRO=make_cairo
@@ -184,6 +193,8 @@ fi
 # Find AWT if available
 if [ ${SWT_OS} = 'win32' ]; then
 	AWT_LIB_EXPR="jawt.dll"
+elif [ ${SWT_OS} = 'darwin' ]; then
+	AWT_LIB_EXPR="libjawt.dylib.disable"
 else
 	AWT_LIB_EXPR="libjawt.so"
 fi
@@ -196,16 +207,16 @@ if [ -z "${AWT_LIB_PATH}" ]; then
 		AWT_LIB_PATH=${SWT_JAVA_HOME}/lib
 		export AWT_LIB_PATH
 	else
-		AWT_LIB_PATH=${SWT_JAVA_HOME}/bin
+		AWT_LIB_PATH=${SWT_JAVA_HOME}/jre/bin
 		export AWT_LIB_PATH
 	fi
 fi
 
-if [ -f "${AWT_LIB_PATH}/${AWT_LIB_EXPR}" ]; then
-	func_echo_plus "jawt.dll found, the SWT/AWT integration library will be compiled."
+if [ -f ${AWT_LIB_PATH}/${AWT_LIB_EXPR} ]; then
+	func_echo_plus "libjawt.so found, the SWT/AWT integration library will be compiled."
 	MAKE_AWT=make_awt
 else
-	func_echo_error "jawt.dll not found, the SWT/AWT integration library will not be compiled."
+	func_echo_error "libjawt.so not found, the SWT/AWT integration library will not be compiled."
 fi
 
 ## Interaction(s) with makefile(s) below:

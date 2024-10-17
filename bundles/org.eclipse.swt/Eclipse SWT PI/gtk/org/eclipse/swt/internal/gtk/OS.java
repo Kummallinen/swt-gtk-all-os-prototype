@@ -82,6 +82,11 @@ public class OS extends C {
 	/** Initialization; load native libraries */
 	static {
 		String propertyName = "SWT_GTK4";
+		//setEnvironmentalVariable("GSK_RENDERER", "cairo"); //Disables OpenGL
+		//setEnvironmentalVariable("GDK_DISABLE", "gl");
+		//setEnvironmentalVariable("GDK_DEBUG", "gl-disable");
+		setEnvironmentalVariable("SWT_GTK4", "1");
+		String path = getEnvironmentalVariable("PATH");
 		String gtk4 = getEnvironmentalVariable(propertyName);
 		if (gtk4 != null && gtk4.equals("1")) {
 			try {
@@ -108,7 +113,7 @@ public class OS extends C {
 
 		if (swt_fatal_warnings != null && swt_fatal_warnings.equals("1")) {
 			String gtk4PropertyName = "SWT_GTK4";
-			String gtk4 = getEnvironmentalVariable (gtk4PropertyName);
+			String gtk4 = "1";//getEnvironmentalVariable (gtk4PropertyName);
 			if (gtk4 != null && gtk4.equals("1")) {
 				System.err.println("SWT warning: SWT_FATAL_WARNINGS only available on GTK3.");
 			} else {
@@ -143,6 +148,14 @@ public class OS extends C {
 			envVarValue = new String(convertedChar);
 		}
 		return envVarValue;
+	}
+
+	public static void setEnvironmentalVariable (String envVarName, String envVarValue) {
+		int ptr = C.setenv(ascii(envVarName), ascii(envVarValue), 1);
+		if (ptr != 0) {
+			//TODO log this
+			System.out.println("FAIL");
+		}
 	}
 
 	/** Constants */

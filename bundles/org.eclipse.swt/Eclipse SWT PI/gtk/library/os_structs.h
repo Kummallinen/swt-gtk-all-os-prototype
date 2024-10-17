@@ -281,4 +281,3 @@ void setXFocusChangeEventFields(JNIEnv *env, jobject lpObject, XFocusChangeEvent
 #define setXFocusChangeEventFields(a,b,c)
 #define XFocusChangeEvent_sizeof() 0
 #endif
-

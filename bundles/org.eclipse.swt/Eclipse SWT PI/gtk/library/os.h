@@ -70,6 +70,16 @@
 // map realpath to a similar function in win32
 #define realpath(N,R) _fullpath((R),(N),_MAX_PATH)
 #endif
+// Remove later - Testing
+
+#ifdef __APPLE__
+#define NO_XAnyEvent
+#import <objc/objc-runtime.h>
+#include "mach-o/dyld.h"
+#include <CoreFoundation/CoreFoundation.h>
+#define NO_gdk_1x11_1surface_1get_1xid
+#define NO_gdk_1x11_1surface_1lookup_1for_1display
+#endif
 
 
 #define OS_LOAD_FUNCTION LOAD_FUNCTION

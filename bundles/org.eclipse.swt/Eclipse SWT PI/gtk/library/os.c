@@ -14936,4 +14936,3 @@ JNIEXPORT jlong JNICALL OS_NATIVE(ubuntu_1menu_1proxy_1get)
 	return rc;
 }
 #endif
-

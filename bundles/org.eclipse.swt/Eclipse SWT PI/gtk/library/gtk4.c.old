@@ -726,42 +726,6 @@ JNIEXPORT jlong JNICALL GTK4_NATIVE(gtk_1gesture_1click_1new)
 }
 #endif
 
-#ifndef NO_gtk_1gesture_1drag_1new
-JNIEXPORT jlong JNICALL GTK4_NATIVE(gtk_1gesture_1drag_1new)
-	(JNIEnv *env, jclass that)
-{
-	jlong rc = 0;
-	GTK4_NATIVE_ENTER(env, that, gtk_1gesture_1drag_1new_FUNC);
-	rc = (jlong)gtk_gesture_drag_new();
-	GTK4_NATIVE_EXIT(env, that, gtk_1gesture_1drag_1new_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_gtk_1gesture_1rotate_1new
-JNIEXPORT jlong JNICALL GTK4_NATIVE(gtk_1gesture_1rotate_1new)
-	(JNIEnv *env, jclass that)
-{
-	jlong rc = 0;
-	GTK4_NATIVE_ENTER(env, that, gtk_1gesture_1rotate_1new_FUNC);
-	rc = (jlong)gtk_gesture_rotate_new();
-	GTK4_NATIVE_EXIT(env, that, gtk_1gesture_1rotate_1new_FUNC);
-	return rc;
-}
-#endif
-
-#ifndef NO_gtk_1gesture_1zoom_1new
-JNIEXPORT jlong JNICALL GTK4_NATIVE(gtk_1gesture_1zoom_1new)
-	(JNIEnv *env, jclass that)
-{
-	jlong rc = 0;
-	GTK4_NATIVE_ENTER(env, that, gtk_1gesture_1zoom_1new_FUNC);
-	rc = (jlong)gtk_gesture_zoom_new();
-	GTK4_NATIVE_EXIT(env, that, gtk_1gesture_1zoom_1new_FUNC);
-	return rc;
-}
-#endif
-
 #ifndef NO_gtk_1hsv_1to_1rgb
 JNIEXPORT void JNICALL GTK4_NATIVE(gtk_1hsv_1to_1rgb)
 	(JNIEnv *env, jclass that, jfloat arg0, jfloat arg1, jfloat arg2, jfloatArray arg3, jfloatArray arg4, jfloatArray arg5)
